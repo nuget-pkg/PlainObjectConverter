@@ -24,6 +24,18 @@ internal static class ObjectParserUtil
         return member.Name;
     }
 
+    public static object? UnWrapOrExportToPlainObject(this object? x)
+    {
+        if (x is IPlainObjectWrapper)
+        {
+            x = ((IPlainObjectWrapper)x).UnWrap();
+        }
+        else if (x is IExportToPlainObject)
+        {
+            x = ((IExportToPlainObject)x).ExportToPlainObject();
+        }
+        return x;
+    }
 }
 public class ObjectParser: IConvertParsedResult
 {
@@ -44,14 +56,7 @@ public class ObjectParser: IConvertParsedResult
     {
         // ReSharper disable once RedundantArgumentDefaultValue
         ObjectParser op = new ObjectParser(false);
-        if (x is IPlainObjectWrapper)
-        {
-            x = ((IPlainObjectWrapper)x).UnWrap();
-        }
-        else if (x is IExportToPlainObject)
-        {
-            x = ((IExportToPlainObject)x).ExportToPlainObject();
-        }
+        x = x.UnWrapOrExportToPlainObject();
         string s = "";
         if (title != null) s = title + ": ";
         if (x is null) return s + "null";
@@ -82,21 +87,11 @@ public class ObjectParser: IConvertParsedResult
     public object? Parse(object? x, bool numberAsDecimal = false)
     {
         string origTypeName = FullName(x);
-
         if (x == null)
         {
             return _oc.ConvertParsedResult(null, origTypeName);
         }
-
-        if (x is IPlainObjectWrapper)
-        {
-            x = ((IPlainObjectWrapper)x).UnWrap();
-        }
-        else if (x is IExportToPlainObject exportableObject)
-        {
-            x = exportableObject.ExportToPlainObject();
-        }
-
+        x = x.UnWrapOrExportToPlainObject();
         Type type = x!.GetType();
         if (type == typeof(string) || type == typeof(char))
         {
@@ -175,7 +170,7 @@ public class ObjectParser: IConvertParsedResult
         else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
         {
             Type keyType = type.GetGenericArguments()[0];
-            var result = new Dictionary<string, object>();
+            var result = new Dictionary<string, object?>();
             //Refuse to output dictionary keys that aren't of type string
             if (keyType != typeof(string))
             {
@@ -184,9 +179,7 @@ public class ObjectParser: IConvertParsedResult
             IDictionary dict = (x as IDictionary)!;
             foreach (object key in dict.Keys)
             {
-#pragma warning disable CS8601 // Null 参照代入の可能性があります。
                 result[(string)key] = Parse(dict[key], numberAsDecimal);
-#pragma warning restore CS8601 // Null 参照代入の可能性があります。
             }
             return _oc.ConvertParsedResult(result, origTypeName);
         }
@@ -319,7 +312,7 @@ internal class JsonStringBuilder
         {
             string str = x.ToString()!;
             sb.Append('"');
-            sb.Append(Escape(str!));
+            sb.Append(Escape(str));
             sb.Append('"');
             return;
         }
@@ -494,7 +487,7 @@ internal class JsonStringBuilder
                     sb.Append(",");
                     if (this._indentJson) sb.Append('\n');
                 }
-                WriteToSb(sb, ObjectParserUtil.GetMemberName(fieldInfos![i]!), level + 1);
+                WriteToSb(sb, ObjectParserUtil.GetMemberName(fieldInfos[i]), level + 1);
                 sb.Append(this._indentJson ? ": " : ":");
                 WriteToSb(sb, value, level + 1, true);
                 count++;
