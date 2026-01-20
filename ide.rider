@@ -1,0 +1,4 @@
+#! /usr/bin/env bash
+set -uvx
+set -e
+start rider64.exe PlainObjectConverter.sln

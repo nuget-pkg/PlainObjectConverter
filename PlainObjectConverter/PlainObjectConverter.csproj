@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<LangVersion>latest</LangVersion>
+		<TargetFrameworks>netstandard2.0;net462;net8.0</TargetFrameworks>
+		<Version>2026.0120.1733.22</Version>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<RootNamespace>PlainObjectConverter</RootNamespace>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+		<NoWarn></NoWarn>
+		<Authors>JavaCommons</Authors>
+		<Company>JavaCommons Technologies</Company>
+		<Product>PlainObjectConverter</Product>
+		<Description>PlainObjectConverter Library</Description>
+		<Copyright>Copyright © JavaCommons Technologies 2024</Copyright>
+		<NeutralLanguage>en-US</NeutralLanguage>
+		<Title>PlainObjectConverter Library</Title>
+		<PackageId>PlainObjectConverter</PackageId>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/nuget-pkg/PlainObjectConverter</PackageProjectUrl>
+		<!--
+		<PackageTags>json;parser</PackageTags>
+		-->
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<PackageReadmeFile>.\README.md</PackageReadmeFile>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
+		<UseWindowsForms>true</UseWindowsForms>
+	</PropertyGroup>
+	<PropertyGroup>
+		<DebugType>full</DebugType>
+	</PropertyGroup>
+	<PropertyGroup>
+		<!--needef for project using xunit-->
+		<IsPackable>true</IsPackable>
+	</PropertyGroup>
+	<ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
+		<Reference Include="Microsoft.CSharp" />
+		<Reference Include="System" />
+		<Reference Include="System.Core" />
+		<Reference Include="System.Data" />
+		<Reference Include="System.Data.DataSetExtensions" />
+		<Reference Include="System.IO.Compression" />
+		<Reference Include="System.Linq" />
+		<Reference Include="System.Net.Http" />
+		<Reference Include="System.Web" />
+		<Reference Include="System.Xml" />
+		<Reference Include="System.Xml.Linq" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include=".\README.md" Pack="true" PackagePath="" />
+	</ItemGroup>
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+		<PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />
+	</ItemGroup>
+	<ItemGroup>
+	  <PackageReference Include="PlainObjectInterface" Version="2026.120.1629.58" />
+	</ItemGroup>
+</Project>
