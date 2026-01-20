@@ -34,6 +34,22 @@ internal static class ObjectParserUtil
         {
             x = ((IExportToPlainObject)x).ExportToPlainObject();
         }
+        else
+        {
+            try
+            {
+                Type type = x.GetType();
+                MethodInfo? method = type.GetMethod("ExportToPlainObject");
+                if (method != null)
+                {
+                    x = method.Invoke(x, []);
+                }
+            }
+            catch (Exception _)
+            {
+                ;
+            }
+        }
         return x;
     }
 }
@@ -87,11 +103,11 @@ public class PlainObjectConverter: IConvertParsedResult
     public object? Parse(object? x, bool numberAsDecimal = false)
     {
         string origTypeName = FullName(x);
+        x = x.UnWrapOrExportToPlainObject();
         if (x == null)
         {
             return _oc.ConvertParsedResult(null, origTypeName);
         }
-        x = x.UnWrapOrExportToPlainObject();
         Type type = x!.GetType();
         if (type == typeof(string) || type == typeof(char))
         {
