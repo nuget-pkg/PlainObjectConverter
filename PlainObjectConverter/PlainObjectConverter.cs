@@ -10,15 +10,6 @@ using System.Text;
 // ReSharper disable once CheckNamespace
 namespace Global;
 
-//public interface IObjectWrapper
-//{
-//    public object UnWrap();
-//}
-
-// public class RedundantObject
-// {
-// }
-
 internal static class ObjectParserUtil
 {
     public static string GetMemberName(MemberInfo member)
@@ -53,7 +44,11 @@ public class ObjectParser: IConvertParsedResult
     {
         // ReSharper disable once RedundantArgumentDefaultValue
         ObjectParser op = new ObjectParser(false);
-        if (x is IExportToPlainObject)
+        if (x is IPlainObjectWrapper)
+        {
+            x = ((IPlainObjectWrapper)x).UnWrap();
+        }
+        else if (x is IExportToPlainObject)
         {
             x = ((IExportToPlainObject)x).ExportToPlainObject();
         }
@@ -93,7 +88,11 @@ public class ObjectParser: IConvertParsedResult
             return _oc.ConvertParsedResult(null, origTypeName);
         }
 
-        if (x is IExportToPlainObject exportableObject)
+        if (x is IPlainObjectWrapper)
+        {
+            x = ((IPlainObjectWrapper)x).UnWrap();
+        }
+        else if (x is IExportToPlainObject exportableObject)
         {
             x = exportableObject.ExportToPlainObject();
         }
