@@ -37,7 +37,7 @@ internal static class ObjectParserUtil
         return x;
     }
 }
-public class PlainObjectParser: IConvertParsedResult
+public class PlainObjectConverter: IConvertParsedResult
 {
     public object? ConvertParsedResult(object? x, string origTypeName) // IConvertParsedResult
     {
@@ -46,7 +46,7 @@ public class PlainObjectParser: IConvertParsedResult
 
     private readonly bool _forceAscii;
     IConvertParsedResult _oc;
-    public PlainObjectParser(bool forceAscii = false, IConvertParsedResult? oc = null)
+    public PlainObjectConverter(bool forceAscii = false, IConvertParsedResult? oc = null)
     {
         this._forceAscii = forceAscii;
         if (oc == null) oc = this;
@@ -55,7 +55,7 @@ public class PlainObjectParser: IConvertParsedResult
     public static string ToPrintable(bool showDetail, object? x, string? title = null)
     {
         // ReSharper disable once RedundantArgumentDefaultValue
-        PlainObjectParser op = new PlainObjectParser(false);
+        PlainObjectConverter op = new PlainObjectConverter(false);
         x = x.UnWrapOrExportToPlainObject();
         string s = "";
         if (title != null) s = title + ": ";
