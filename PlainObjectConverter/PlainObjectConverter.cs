@@ -44,7 +44,7 @@ public class PlainObjectConverter: IConvertParsedResult
         {
             try
             {
-                Type type = x!.GetType();
+                Type type = x.GetType();
                 MethodInfo? method = type.GetMethod("ExportToPlainObject");
                 if (method != null)
                 {
