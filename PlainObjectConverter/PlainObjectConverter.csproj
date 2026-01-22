@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
 		<TargetFrameworks>netstandard2.0;net462;net8.0</TargetFrameworks>
-		<Version>2026.0120.1847.13</Version>
+		<Version>2026.0122.1111.50</Version>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<RootNamespace>PlainObjectConverter</RootNamespace>
@@ -55,6 +55,7 @@
 		<PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />
 	</ItemGroup>
 	<ItemGroup>
+	  <PackageReference Include="CommonJsonInterface" Version="2026.122.1008.12" />
 	  <PackageReference Include="PlainObjectInterface" Version="2026.120.1629.58" />
 	</ItemGroup>
 </Project>
