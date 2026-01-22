@@ -94,6 +94,7 @@ public class PlainObjectConverter: IConvertParsedResult
     }
     public string ToPrintable(bool showDetail, object? x, string? title = null)
     {
+        string fullName = FullName(x);
         // ReSharper disable once RedundantArgumentDefaultValue
         PlainObjectConverter op = this;
         x = this.UnWrapOrExportToPlainObject(x);
@@ -115,7 +116,7 @@ public class PlainObjectConverter: IConvertParsedResult
             output = x.ToString()!;
         }
         if (!showDetail) return s + output;
-        return s + $"<{FullName(x)}> {output}";
+        return s + $"<{fullName}> {output}";
     }
     // ReSharper disable once MemberCanBePrivate.Global
     public static string FullName(dynamic? x)
