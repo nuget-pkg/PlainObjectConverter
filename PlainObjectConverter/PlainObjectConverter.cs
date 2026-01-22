@@ -32,9 +32,9 @@ public class PlainObjectConverter: IConvertParsedResult
     internal object? UnWrapOrExportToPlainObject(object? x)
     {
         if (x == null) return null;
-        if (x is IPlainObjectWrapper)
+        if (x is IExposeInternalObject)
         {
-            x = ((IPlainObjectWrapper)x).UnWrap();
+            x = ((IExposeInternalObject)x).ExposeInternalObject();
         }
         else if (x is IExportToPlainObject)
         {
