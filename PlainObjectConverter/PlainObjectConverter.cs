@@ -346,15 +346,15 @@ internal class JsonStringBuilder
     {
         if (!cancelIndent) Indent(sb, level);
 
+        if (x is IExportToPlainObject exportableObject)
+        {
+            x = exportableObject.ExportToPlainObject();
+        }
+
         if (x == null)
         {
             sb.Append("null");
             return;
-        }
-
-        if (x is IExportToPlainObject exportableObject)
-        {
-            x = exportableObject.ExportToPlainObject();
         }
 
         Type type = x!.GetType();
