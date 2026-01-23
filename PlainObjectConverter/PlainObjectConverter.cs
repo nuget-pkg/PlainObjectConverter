@@ -123,7 +123,13 @@ public class PlainObjectConverter: IConvertParsedResult
     {
         if (x is null) return "null";
         string fullName = ((object)x).GetType().FullName!;
-        return fullName.Split('`')[0];
+        fullName = fullName.Split('`')[0];
+        if (x is IExportToCommonJson)
+        {
+            object? internalObject = ((IExposeInternalObject)x).ExposeInternalObject();
+            fullName = $"{fullName}({FullName(internalObject)})";
+        }
+        return fullName;
     }
     public object? Parse(object? x, bool numberAsDecimal = false)
     {
