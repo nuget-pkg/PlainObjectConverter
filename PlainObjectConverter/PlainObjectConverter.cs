@@ -124,7 +124,7 @@ public class PlainObjectConverter: IConvertParsedResult
         if (x is null) return "null";
         string fullName = ((object)x).GetType().FullName!;
         fullName = fullName.Split('`')[0];
-        if (x is IExportToCommonJson)
+        if (x is IExposeInternalObject)
         {
             object? internalObject = ((IExposeInternalObject)x).ExposeInternalObject();
             fullName = $"{fullName}({FullName(internalObject)})";
