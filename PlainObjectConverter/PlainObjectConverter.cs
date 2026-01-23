@@ -97,7 +97,7 @@ public class PlainObjectConverter: IConvertParsedResult
         string fullName = FullName(x);
         // ReSharper disable once RedundantArgumentDefaultValue
         PlainObjectConverter op = this;
-        x = this.UnWrapOrExportToPlainObject(x);
+        //x = this.UnWrapOrExportToPlainObject(x);
         string s = "";
         if (title != null) s = title + ": ";
         if (x is null) return s + "null";
