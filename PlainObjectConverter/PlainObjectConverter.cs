@@ -381,6 +381,8 @@ internal class JsonStringBuilder
             return;
         }
 
+        type = x!.GetType();
+
         if (type == typeof(string) || type == typeof(char))
         {
             string str = x.ToString()!;
@@ -389,13 +391,18 @@ internal class JsonStringBuilder
             sb.Append('"');
             return;
         }
-        if (type == typeof(byte) || type == typeof(sbyte)
-            || type == typeof(short) || type == typeof(ushort)
-            || type == typeof(int) || type == typeof(uint)
-            || type == typeof(long) || type == typeof(ulong)
+        if (type == typeof(byte)
+            || type == typeof(sbyte)
+            || type == typeof(short)
+            || type == typeof(ushort)
+            || type == typeof(int)
+            || type == typeof(uint)
+            || type == typeof(long)
+            || type == typeof(ulong)
             || type == typeof(float)
-            || type == typeof(double)
-            || type == typeof(decimal))
+            || type == typeof(double) || type == typeof(Double)
+            || type == typeof(decimal)
+            )
         {
             sb.Append(x/*.ToString()*/);
             // ReSharper disable once RedundantJumpStatement
