@@ -375,6 +375,12 @@ internal class JsonStringBuilder
             }
         }
 
+        if (x == null)
+        {
+            sb.Append("null");
+            return;
+        }
+
         if (type == typeof(string) || type == typeof(char))
         {
             string str = x.ToString()!;
