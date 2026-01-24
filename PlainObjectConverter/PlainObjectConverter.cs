@@ -346,11 +346,6 @@ internal class JsonStringBuilder
     {
         if (!cancelIndent) Indent(sb, level);
 
-        if (x is IExportToPlainObject exportableObject)
-        {
-            x = exportableObject.ExportToPlainObject();
-        }
-
         if (x == null)
         {
             sb.Append("null");
@@ -358,6 +353,28 @@ internal class JsonStringBuilder
         }
 
         Type type = x!.GetType();
+
+        if (x is IExportToPlainObject exportableObject)
+        {
+            x = exportableObject.ExportToPlainObject();
+        }
+        else
+        {
+            try
+            {
+                //Type type = x.GetType();
+                MethodInfo? method = type.GetMethod("ExportToPlainObject");
+                if (method != null)
+                {
+                    x = method.Invoke(x, []);
+                }
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+        }
+
         if (type == typeof(string) || type == typeof(char))
         {
             string str = x.ToString()!;
