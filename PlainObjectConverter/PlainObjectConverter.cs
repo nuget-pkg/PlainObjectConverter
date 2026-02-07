@@ -265,7 +265,7 @@ public class PlainObjectConverter: IConvertParsedResult
         }
     }
     // ReSharper disable once MemberCanBePrivate.Global
-    public string Stringify(object x, bool indent, bool sortKeys = false)
+    public string Stringify(object? x, bool indent, bool sortKeys = false)
     {
         StringBuilder sb = new StringBuilder();
         new JsonStringBuilder(this, this._forceAscii, indent, sortKeys).WriteToSb(sb, x, 0);
