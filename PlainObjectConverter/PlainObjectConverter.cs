@@ -94,10 +94,14 @@ public class PlainObjectConverter: IConvertParsedResult
     }
     public string ToPrintable(bool showDetail, object? x, string? title = null)
     {
-        string fullName = FullName(x);
+        var po = Parse(x, numberAsDecimal: true);
+        return ToPrintableHelper(showDetail, po, title, FullName(x));
+    }
+    private string ToPrintableHelper(bool showDetail, object? x, string? title = null, string? fullName = null)
+    {
+        if (fullName == null) fullName = FullName(x);
         // ReSharper disable once RedundantArgumentDefaultValue
         PlainObjectConverter op = this;
-        //x = this.UnWrapOrExportToPlainObject(x);
         string s = "";
         if (title != null) s = title + ": ";
         if (x is null) return s + "null";
