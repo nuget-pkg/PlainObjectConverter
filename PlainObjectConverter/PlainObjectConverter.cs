@@ -113,7 +113,7 @@ public class PlainObjectConverter: IConvertParsedResult
         string output /*= null*/;
         try
         {
-            output = op.Stringify(x, true);
+            output = op.Stringify(x, indent: true, keyAsSymbol: true);
         }
         catch (Exception)
         {
