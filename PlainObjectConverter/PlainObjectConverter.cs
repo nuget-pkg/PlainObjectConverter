@@ -336,7 +336,7 @@ internal class JsonStringBuilder
                 sb.Append(",");
                 if (this._indentJson) sb.Append('\n');
             }
-            WriteToSb(sb, (string)key, level + 1);
+            WriteToSb(sb, (string)key, level + 1, noQuoteKey: this._keyAsSymbol);
             sb.Append(this._indentJson ? ": " : ":");
             WriteToSb(sb, dict[key]!, level + 1, true);
             count++;
@@ -348,7 +348,7 @@ internal class JsonStringBuilder
         }
         sb.Append("}");
     }
-    public void WriteToSb(StringBuilder sb, object? x, int level, bool cancelIndent = false)
+    public void WriteToSb(StringBuilder sb, object? x, int level, bool cancelIndent = false, bool noQuoteKey = false)
     {
         if (!cancelIndent) Indent(sb, level);
 
@@ -392,9 +392,9 @@ internal class JsonStringBuilder
         if (type == typeof(string) || type == typeof(char))
         {
             string str = x.ToString()!;
-            if (!this._keyAsSymbol) sb.Append('"');
+            if (!noQuoteKey) sb.Append('"');
             sb.Append(Escape(str));
-            if (!this._keyAsSymbol) sb.Append('"');
+            if (!noQuoteKey) sb.Append('"');
             return;
         }
         if (type == typeof(byte)
@@ -514,7 +514,7 @@ internal class JsonStringBuilder
                     sb.Append(",");
                     if (this._indentJson) sb.Append('\n');
                 }
-                WriteToSb(sb, (string)key, level + 1);
+                WriteToSb(sb, (string)key, level + 1, noQuoteKey: this._keyAsSymbol);
                 sb.Append(this._indentJson ? ": " : ":");
                 WriteToSb(sb, ht[key], level + 1, true);
                 count++;
