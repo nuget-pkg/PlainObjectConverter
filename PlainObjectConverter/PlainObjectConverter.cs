@@ -127,6 +127,10 @@ public class PlainObjectConverter: IConvertParsedResult
     {
         if (x is null) return "null";
         string fullName = ((object)x).GetType().FullName!;
+        if (fullName.StartsWith("<>f__AnonymousType"))
+        {
+            return "AnonymousType";
+        }
         fullName = fullName.Split('`')[0];
         if (x is IExposeInternalObject)
         {
