@@ -269,10 +269,10 @@ public class PlainObjectConverter: IConvertParsedResult
         }
     }
     // ReSharper disable once MemberCanBePrivate.Global
-    public string Stringify(object? x, bool indent, bool sortKeys = false)
+    public string Stringify(object? x, bool indent, bool sortKeys = false, bool keyAsSymbol = false)
     {
         StringBuilder sb = new StringBuilder();
-        new JsonStringBuilder(this, this._forceAscii, indent, sortKeys).WriteToSb(sb, x, 0);
+        new JsonStringBuilder(this, this._forceAscii, indent, sortKeys, keyAsSymbol).WriteToSb(sb, x, 0);
         string json = sb.ToString();
         return json;
     }
@@ -284,13 +284,15 @@ internal class JsonStringBuilder
     private readonly bool _forceAscii /*= false*/;
     private readonly bool _indentJson /*= false*/;
     private readonly bool _sortKeys /*= false*/;
+    private readonly bool _keyAsSymbol ;
     // ReSharper disable once ConvertToPrimaryConstructor
-    public JsonStringBuilder(PlainObjectConverter poc, bool forceAscii, bool indentJson, bool sortKeys)
+    public JsonStringBuilder(PlainObjectConverter poc, bool forceAscii, bool indentJson, bool sortKeys, bool keyAsSymbol)
     {
         this._poc = poc;
         this._forceAscii = forceAscii;
         this._indentJson = indentJson;
         this._sortKeys = sortKeys;
+        this._keyAsSymbol = keyAsSymbol;
     }
 
     private void Indent(StringBuilder sb, int level)
@@ -390,9 +392,9 @@ internal class JsonStringBuilder
         if (type == typeof(string) || type == typeof(char))
         {
             string str = x.ToString()!;
-            sb.Append('"');
+            if (!this._keyAsSymbol) sb.Append('"');
             sb.Append(Escape(str));
-            sb.Append('"');
+            if (!this._keyAsSymbol) sb.Append('"');
             return;
         }
         if (type == typeof(byte)
@@ -561,10 +563,6 @@ internal class JsonStringBuilder
                 if (fieldInfos[i].IsDefined(typeof(IgnoreDataMemberAttribute), true))
                     continue;
                 object? value = fieldInfos[i].GetValue(x);
-                // if (x is RedundantObject)
-                // {
-                //     if (value == null) continue;
-                // }
                 if (count == 0 && this._indentJson) sb.Append('\n');
                 if (count > 0)
                 {
@@ -582,10 +580,6 @@ internal class JsonStringBuilder
                 if (!propertyInfo[i].CanRead || propertyInfo[i].IsDefined(typeof(IgnoreDataMemberAttribute), true))
                     continue;
                 object? value = propertyInfo[i].GetValue(x, null);
-                // if (x is RedundantObject)
-                // {
-                //     if (value == null) continue;
-                // }
                 if (count == 0 && this._indentJson) sb.Append('\n');
                 if (count > 0)
                 {
