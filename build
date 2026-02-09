@@ -1,0 +1,6 @@
+#! /usr/bin/env bash
+cd "$(dirname "$0")"
+set -euo pipefail
+dotnet run --project Targets -- "$@"
+
+# See: https://github.com/adamralph/bullseye
