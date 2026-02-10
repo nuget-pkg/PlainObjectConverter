@@ -1,19 +1,26 @@
-﻿using System;
+﻿// ReSharper disable once CheckNamespace
+namespace Global;
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
-
-// ReSharper disable once CheckNamespace
-namespace Global;
+using System.Text.RegularExpressions;
 
 internal static class ObjectParserUtil
 {
 }
-public class PlainObjectConverter: IConvertParsedResult
+#if GLOBAL_POC
+public
+#else
+internal
+#endif
+class PlainObjectConverter: IConvertParsedResult
 {
     public object? ConvertParsedResult(object? x, string origTypeName) // IConvertParsedResult
     {
@@ -66,11 +73,14 @@ public class PlainObjectConverter: IConvertParsedResult
             {
                 try
                 {
-                    Type type = x!.GetType();
-                    MethodInfo? method = type.GetMethod("ExportToCommonJson");
-                    if (method != null)
+                    if (x != null)
                     {
-                        x = JsonParser.ParseJson( (string)method.Invoke(x, [])! );
+                        Type type = x!.GetType();
+                        MethodInfo? method = type.GetMethod("ExportToCommonJson");
+                        if (method != null)
+                        {
+                            x = JsonParser.ParseJson((string)method.Invoke(x, [])!);
+                        }
                     }
                 }
                 catch (Exception)
@@ -80,6 +90,17 @@ public class PlainObjectConverter: IConvertParsedResult
             }
         }
         return x;
+    }
+    public static bool IsValidSymbolName(string s)
+    {
+        Regex? r = null;
+        Match? m = null;
+        string pat = @"^[_a-zA-Z0-9]+$";
+        r = new Regex(pat);
+        m = r.Match(s);
+        //Console.WriteLine(s);
+        //Console.WriteLine(m.Success);
+        return m.Success;
     }
     internal string GetMemberName(MemberInfo member)
     {
@@ -92,12 +113,12 @@ public class PlainObjectConverter: IConvertParsedResult
 
         return member.Name;
     }
-    public string ToPrintable(bool showDetail, object? x, string? title = null)
+    public string ToPrintable(bool showDetail, object? x, string? title = null, bool noIndent = false)
     {
-        var po = Parse(x, numberAsDecimal: true);
-        return ToPrintableHelper(showDetail, po, title, FullName(x));
+        //var po = Parse(x, numberAsDecimal: true);
+        return ToPrintableHelper(showDetail, x, title, noIndent, FullName(x));
     }
-    private string ToPrintableHelper(bool showDetail, object? x, string? title = null, string? fullName = null)
+    private string ToPrintableHelper(bool showDetail, object? x, string? title = null, bool noIndent = false, string? fullName = null)
     {
         if (fullName == null) fullName = FullName(x);
         // ReSharper disable once RedundantArgumentDefaultValue
@@ -113,7 +134,7 @@ public class PlainObjectConverter: IConvertParsedResult
         string output /*= null*/;
         try
         {
-            output = op.Stringify(x, indent: true, keyAsSymbol: true);
+            output = op.Stringify(x, indent: !noIndent, keyAsSymbol: true);
         }
         catch (Exception)
         {
@@ -275,8 +296,10 @@ public class PlainObjectConverter: IConvertParsedResult
     // ReSharper disable once MemberCanBePrivate.Global
     public string Stringify(object? x, bool indent, bool sortKeys = false, bool keyAsSymbol = false)
     {
+        var po = Parse(x, numberAsDecimal: true);
         StringBuilder sb = new StringBuilder();
-        new JsonStringBuilder(this, this._forceAscii, indent, sortKeys, keyAsSymbol).WriteToSb(sb, x, 0);
+        //new JsonStringBuilder(this, this._forceAscii, indent, sortKeys, keyAsSymbol).WriteToSb(sb, x, 0);
+        new JsonStringBuilder(this, this._forceAscii, indent, sortKeys, keyAsSymbol).WriteToSb(sb, po, 0);
         string json = sb.ToString();
         return json;
     }
@@ -396,9 +419,17 @@ internal class JsonStringBuilder
         if (type == typeof(string) || type == typeof(char))
         {
             string str = x.ToString()!;
-            if (!noQuoteKey) sb.Append('"');
+            if (noQuoteKey)
+            {
+                if (PlainObjectConverter.IsValidSymbolName(str))
+                {
+                    sb.Append(str);
+                    return;
+                }
+            }
+            sb.Append('"');
             sb.Append(Escape(str));
-            if (!noQuoteKey) sb.Append('"');
+            sb.Append('"');
             return;
         }
         if (type == typeof(byte)
@@ -460,18 +491,18 @@ internal class JsonStringBuilder
             // ReSharper disable once RedundantJumpStatement
             return;
         }
-        else if (x is ExpandoObject)
-        {
-            var dic = x as IDictionary<string, object>;
-            var result = new Dictionary<string, object>();
-            foreach (var key in dic!.Keys)
-            {
-                result[key] = dic[key];
-            }
-            WriteToSb(sb, result, level, cancelIndent);
-            // ReSharper disable once RedundantJumpStatement
-            return;
-        }
+        //else if (x is ExpandoObject)
+        //{
+        //    var dic = x as IDictionary<string, object>;
+        //    var result = new Dictionary<string, object>();
+        //    foreach (var key in dic!.Keys)
+        //    {
+        //        result[key] = dic[key];
+        //    }
+        //    WriteToSb(sb, result, level, cancelIndent);
+        //    // ReSharper disable once RedundantJumpStatement
+        //    return;
+        //}
         else if (x is IList)
         {
             IList list = (x as IList)!;

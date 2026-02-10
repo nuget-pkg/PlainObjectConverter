@@ -2,7 +2,7 @@
 	<PropertyGroup>
 		<LangVersion>latest</LangVersion>
 		<TargetFrameworks>netstandard2.0;net462;net8.0</TargetFrameworks>
-		<Version>2026.0210.0722.33</Version>
+		<Version>2026.0211.0012.55</Version>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>disable</ImplicitUsings>
 		<RootNamespace>PlainObjectConverter</RootNamespace>
@@ -34,6 +34,9 @@
 	<PropertyGroup>
 		<!--needef for project using xunit-->
 		<IsPackable>true</IsPackable>
+	</PropertyGroup>
+	<PropertyGroup>
+		<DefineConstants>$(DefineConstants);GLOBAL_POC</DefineConstants>
 	</PropertyGroup>
 	<ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
 		<Reference Include="Microsoft.CSharp" />
