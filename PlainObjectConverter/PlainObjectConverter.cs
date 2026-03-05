@@ -29,7 +29,7 @@ class PlainObjectConverter: IConvertParsedResult
     internal readonly IParseJson? JsonParser;
     private readonly bool _forceAscii;
     private readonly IConvertParsedResult _iConvertParsedResult;
-    public PlainObjectConverter(IParseJson? jsonParser = null, bool forceAscii = false, IConvertParsedResult? iConvertParsedResult = null)
+    public PlainObjectConverter(IParseJson? jsonParser = null, bool forceAscii = false, /*bool removeSurrogatePair = false,*/ IConvertParsedResult? iConvertParsedResult = null)
     {
         this.JsonParser = jsonParser;
         this._forceAscii = forceAscii;
@@ -95,11 +95,9 @@ class PlainObjectConverter: IConvertParsedResult
     {
         Regex? r = null;
         Match? m = null;
-        string pat = @"^[_a-zA-Z0-9]+$";
+        string pat = @"^[_a-zA-Z][_a-zA-Z0-9]*$";
         r = new Regex(pat);
         m = r.Match(s);
-        //Console.WriteLine(s);
-        //Console.WriteLine(m.Success);
         return m.Success;
     }
     internal string GetMemberName(MemberInfo member)
@@ -113,12 +111,12 @@ class PlainObjectConverter: IConvertParsedResult
 
         return member.Name;
     }
-    public string ToPrintable(bool showDetail, object? x, string? title = null, bool noIndent = false)
+    public string ToPrintable(bool showDetail, object? x, string? title = null, bool noIndent = false, bool removeSurrogatePair = false)
     {
         //var po = Parse(x, numberAsDecimal: true);
-        return ToPrintableHelper(showDetail, x, title, noIndent, FullName(x));
+        return ToPrintableHelper(showDetail, x, title, noIndent: noIndent, removeSurrogatePair: removeSurrogatePair, FullName(x));
     }
-    private string ToPrintableHelper(bool showDetail, object? x, string? title = null, bool noIndent = false, string? fullName = null)
+    private string ToPrintableHelper(bool showDetail, object? x, string? title, bool noIndent, bool removeSurrogatePair, string? fullName = null)
     {
         if (fullName == null) fullName = FullName(x);
         // ReSharper disable once RedundantArgumentDefaultValue
@@ -134,7 +132,7 @@ class PlainObjectConverter: IConvertParsedResult
         string output /*= null*/;
         try
         {
-            output = op.Stringify(x, indent: !noIndent, keyAsSymbol: true);
+            output = op.Stringify(x, indent: !noIndent, keyAsSymbol: true, removeSurrogatePair: removeSurrogatePair);
         }
         catch (Exception)
         {
@@ -294,12 +292,11 @@ class PlainObjectConverter: IConvertParsedResult
         }
     }
     // ReSharper disable once MemberCanBePrivate.Global
-    public string Stringify(object? x, bool indent, bool sortKeys = false, bool keyAsSymbol = false)
+    public string Stringify(object? x, bool indent, bool sortKeys = false, bool keyAsSymbol = false, bool removeSurrogatePair = false)
     {
         var po = Parse(x, numberAsDecimal: true);
         StringBuilder sb = new StringBuilder();
-        //new JsonStringBuilder(this, this._forceAscii, indent, sortKeys, keyAsSymbol).WriteToSb(sb, x, 0);
-        new JsonStringBuilder(this, this._forceAscii, indent, sortKeys, keyAsSymbol).WriteToSb(sb, po, 0);
+        new JsonStringBuilder(this, forceAscii: this._forceAscii, indentJson: indent, sortKeys: sortKeys, keyAsSymbol: keyAsSymbol, removeSurrogatePair: removeSurrogatePair).WriteToSb(sb, po, 0);
         string json = sb.ToString();
         return json;
     }
@@ -311,15 +308,17 @@ internal class JsonStringBuilder
     private readonly bool _forceAscii /*= false*/;
     private readonly bool _indentJson /*= false*/;
     private readonly bool _sortKeys /*= false*/;
-    private readonly bool _keyAsSymbol ;
+    private readonly bool _keyAsSymbol;
+    private readonly bool _removeSurrogatePair;
     // ReSharper disable once ConvertToPrimaryConstructor
-    public JsonStringBuilder(PlainObjectConverter poc, bool forceAscii, bool indentJson, bool sortKeys, bool keyAsSymbol)
+    public JsonStringBuilder(PlainObjectConverter poc, bool forceAscii, bool indentJson, bool sortKeys, bool keyAsSymbol, bool removeSurrogatePair = false)
     {
         this._poc = poc;
         this._forceAscii = forceAscii;
         this._indentJson = indentJson;
         this._sortKeys = sortKeys;
         this._keyAsSymbol = keyAsSymbol;
+        this._removeSurrogatePair = removeSurrogatePair;
     }
 
     private void Indent(StringBuilder sb, int level)
@@ -419,6 +418,12 @@ internal class JsonStringBuilder
         if (type == typeof(string) || type == typeof(char))
         {
             string str = x.ToString()!;
+            if (_removeSurrogatePair)
+            {
+                str = Regex.Replace(str, @"[\uD800-\uDFFF]", "{ddbea68e-d93f-4e85-92b5-83b1ace6d50f}");
+                str = str.Replace("{ddbea68e-d93f-4e85-92b5-83b1ace6d50f}{ddbea68e-d93f-4e85-92b5-83b1ace6d50f}", "★");
+                str = str.Replace("{ddbea68e-d93f-4e85-92b5-83b1ace6d50f}", "★");
+            }
             if (noQuoteKey)
             {
                 if (PlainObjectConverter.IsValidSymbolName(str))
@@ -491,18 +496,6 @@ internal class JsonStringBuilder
             // ReSharper disable once RedundantJumpStatement
             return;
         }
-        //else if (x is ExpandoObject)
-        //{
-        //    var dic = x as IDictionary<string, object>;
-        //    var result = new Dictionary<string, object>();
-        //    foreach (var key in dic!.Keys)
-        //    {
-        //        result[key] = dic[key];
-        //    }
-        //    WriteToSb(sb, result, level, cancelIndent);
-        //    // ReSharper disable once RedundantJumpStatement
-        //    return;
-        //}
         else if (x is IList)
         {
             IList list = (x as IList)!;
