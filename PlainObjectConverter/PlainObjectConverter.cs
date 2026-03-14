@@ -1,20 +1,16 @@
-﻿// ReSharper disable once CheckNamespace
+﻿# if true
 namespace Global;
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-internal static class ObjectParserUtil
-{
-}
 #if GLOBAL_POC
 public
 #else
@@ -116,18 +112,40 @@ class PlainObjectConverter: IConvertParsedResult
         //var po = Parse(x, numberAsDecimal: true);
         return ToPrintableHelper(showDetail, x, title, noIndent: noIndent, removeSurrogatePair: removeSurrogatePair, FullName(x));
     }
+    public static string EscapeNonAsciiChars(string text)
+    {
+        var sb = new StringBuilder();
+        sb.Length = 0;
+        if (sb.Capacity < text.Length + text.Length / 10)
+            sb.Capacity = text.Length + text.Length / 10;
+        foreach (char c in text)
+        {
+            if (c > 127)
+            {
+                ushort val = c;
+                sb.Append("\\u").Append(val.ToString("X4"));
+            }
+            else
+            {
+                sb.Append(c);
+            }
+        }
+        string result = sb.ToString();
+        sb.Length = 0;
+        return result;
+    }
     private string ToPrintableHelper(bool showDetail, object? x, string? title, bool noIndent, bool removeSurrogatePair, string? fullName = null)
     {
         if (fullName == null) fullName = FullName(x);
-        // ReSharper disable once RedundantArgumentDefaultValue
         PlainObjectConverter op = this;
         string s = "";
         if (title != null) s = title + ": ";
         if (x is null) return s + "null";
-        if (x is string)
+        if (x is string str)
         {
-            if (!showDetail) return s + (string)x;
-            return s + "`" + (string)x + "`";
+            if (_forceAscii) str = EscapeNonAsciiChars(str);
+            if (!showDetail) return s + str;
+            return s + "`" + str + "`";
         }
         string output /*= null*/;
         try
@@ -141,7 +159,6 @@ class PlainObjectConverter: IConvertParsedResult
         if (!showDetail) return s + output;
         return s + $"<{fullName}> {output}";
     }
-    // ReSharper disable once MemberCanBePrivate.Global
     public static string FullName(dynamic? x)
     {
         if (x is null) return "null";
@@ -291,7 +308,6 @@ class PlainObjectConverter: IConvertParsedResult
             return _iConvertParsedResult.ConvertParsedResult(result, origTypeName);
         }
     }
-    // ReSharper disable once MemberCanBePrivate.Global
     public string Stringify(object? x, bool indent, bool sortKeys = false, bool keyAsSymbol = false, bool removeSurrogatePair = false)
     {
         var po = Parse(x, numberAsDecimal: true);
@@ -310,7 +326,6 @@ internal class JsonStringBuilder
     private readonly bool _sortKeys /*= false*/;
     private readonly bool _keyAsSymbol;
     private readonly bool _removeSurrogatePair;
-    // ReSharper disable once ConvertToPrimaryConstructor
     public JsonStringBuilder(PlainObjectConverter poc, bool forceAscii, bool indentJson, bool sortKeys, bool keyAsSymbol, bool removeSurrogatePair = false)
     {
         this._poc = poc;
@@ -332,7 +347,6 @@ internal class JsonStringBuilder
         }
     }
 
-    // ReSharper disable once MemberCanBePrivate.Global
     public static Type? GetGenericIDictionaryType(Type? type)
     {
         if (type == null) return null;
@@ -451,13 +465,11 @@ internal class JsonStringBuilder
             )
         {
             sb.Append(x/*.ToString()*/);
-            // ReSharper disable once RedundantJumpStatement
             return;
         }
         else if (type == typeof(bool))
         {
             sb.Append(x.ToString()!.ToLower());
-            // ReSharper disable once RedundantJumpStatement
             return;
         }
         else if (type == typeof(DateTime))
@@ -475,25 +487,21 @@ internal class JsonStringBuilder
                     WriteToSb(sb, dt.ToString("o").Replace("Z", ""), level, cancelIndent);
                     break;
             }
-            // ReSharper disable once RedundantJumpStatement
             return;
         }
         else if (type == typeof(TimeSpan))
         {
             WriteToSb(sb, x.ToString(), level, cancelIndent);
-            // ReSharper disable once RedundantJumpStatement
             return;
         }
         else if (type == typeof(Guid))
         {
             WriteToSb(sb, x.ToString(), level, cancelIndent);
-            // ReSharper disable once RedundantJumpStatement
             return;
         }
         else if (type.IsEnum)
         {
             WriteToSb(sb, x.ToString(), level, cancelIndent);
-            // ReSharper disable once RedundantJumpStatement
             return;
         }
         else if (x is IList)
@@ -518,7 +526,6 @@ internal class JsonStringBuilder
             if (this._indentJson) sb.Append('\n');
             Indent(sb, level);
             sb.Append(']');
-            // ReSharper disable once RedundantJumpStatement
             return;
         }
         else if (x is Hashtable)
@@ -565,7 +572,6 @@ internal class JsonStringBuilder
                 return;
             }
             WriteProcessGenericIDictionaryToSb(sb, (dynamic)x, level);
-            // ReSharper disable once RedundantJumpStatement
             return;
         }
         else if (x is IEnumerable)
@@ -625,18 +631,17 @@ internal class JsonStringBuilder
                 Indent(sb, level);
             }
             sb.Append('}');
-            // ReSharper disable once RedundantJumpStatement
             return;
         }
     }
 
-    private string Escape(string aText /*, bool ForceASCII*/)
+    private string Escape(string text)
     {
         var sb = new StringBuilder();
         sb.Length = 0;
-        if (sb.Capacity < aText.Length + aText.Length / 10)
-            sb.Capacity = aText.Length + aText.Length / 10;
-        foreach (char c in aText)
+        if (sb.Capacity < text.Length + text.Length / 10)
+            sb.Capacity = text.Length + text.Length / 10;
+        foreach (char c in text)
         {
             switch (c)
             {
@@ -677,3 +682,4 @@ internal class JsonStringBuilder
         return result;
     }
 }
+#endif
