@@ -163,24 +163,33 @@ class PlainObjectConverter : IConvertParsedResult {
             return _iConvertParsedResult.ConvertParsedResult(null, origTypeName);
         }
         Type type = x.GetType();
-        if (type == typeof(string) || type == typeof(char)) {
+        if (type == typeof(string) || type == typeof(char))
+        {
             return _iConvertParsedResult.ConvertParsedResult(x.ToString(), origTypeName);
-        } else if (type == typeof(byte) || type == typeof(sbyte)
+        }
+        else if (type == typeof(byte) || type == typeof(sbyte)
               || type == typeof(short) || type == typeof(ushort)
               || type == typeof(int) || type == typeof(uint)
               || type == typeof(long) || type == typeof(ulong)
               || type == typeof(float)
               || type == typeof(double)
-              || type == typeof(decimal)) {
-            if (numberAsDecimal) {
+              || type == typeof(decimal))
+        {
+            if (numberAsDecimal)
+            {
                 return _iConvertParsedResult.ConvertParsedResult(Convert.ToDecimal(x), origTypeName);
             }
             return _iConvertParsedResult.ConvertParsedResult(Convert.ToDouble(x), origTypeName);
-        } else if (type == typeof(bool)) {
+        }
+        else if (type == typeof(bool))
+        {
             return _iConvertParsedResult.ConvertParsedResult(x, origTypeName);
-        } else if (type == typeof(DateTime)) {
+        }
+        else if (type == typeof(DateTime))
+        {
             DateTime dt = (DateTime)x;
-            switch (dt.Kind) {
+            switch (dt.Kind)
+            {
                 case DateTimeKind.Local:
                     return _iConvertParsedResult.ConvertParsedResult(dt.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"), origTypeName);
                 case DateTimeKind.Utc:
@@ -188,55 +197,82 @@ class PlainObjectConverter : IConvertParsedResult {
                 default:
                     return _iConvertParsedResult.ConvertParsedResult(dt.ToString("o").Replace("Z", ""), origTypeName);
             }
-        } else if (type == typeof(TimeSpan)) {
+        }
+        else if (type == typeof(TimeSpan))
+        {
             return _iConvertParsedResult.ConvertParsedResult(x.ToString(), origTypeName);
-        } else if (type == typeof(Guid)) {
+        }
+        else if (type == typeof(Guid))
+        {
             return _iConvertParsedResult.ConvertParsedResult(x.ToString(), origTypeName);
-        } else if (type.IsEnum) {
+        }
+        else if (type.IsEnum)
+        {
             return _iConvertParsedResult.ConvertParsedResult(x.ToString(), origTypeName);
-        } else if (x is ExpandoObject) {
+        }
+        else if (x is ExpandoObject)
+        {
             var dic = x as IDictionary<string, object?>;
             var result = new Dictionary<string, object?>();
-            foreach (var key in dic!.Keys) {
+            foreach (var key in dic!.Keys)
+            {
                 result[key] = Parse(dic[key], numberAsDecimal);
             }
             return _iConvertParsedResult.ConvertParsedResult(result, origTypeName);
-        } else if (x is IList list) {
+        }
+        else if (x is IList list)
+        {
             var result = new List<object?>();
-            for (int i = 0; i < list.Count; i++) {
+            for (int i = 0; i < list.Count; i++)
+            {
                 result.Add(Parse(list[i], numberAsDecimal));
             }
             return _iConvertParsedResult.ConvertParsedResult(result, origTypeName);
-        } else if (x is Hashtable ht) {
+        }
+        else if (x is Hashtable ht)
+        {
             var result = new Dictionary<string, object?>();
-            foreach (object key in ht.Keys) {
-                if (!(key is string s)) {
+            foreach (object key in ht.Keys)
+            {
+                if (!(key is string s))
+                {
                     continue;
                 }
                 result.Add(s, Parse(ht[s], numberAsDecimal));
             }
             return _iConvertParsedResult.ConvertParsedResult(result, origTypeName);
-        } else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>)) {
+        }
+        else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+        {
             Type keyType = type.GetGenericArguments()[0];
             var result = new Dictionary<string, object?>();
             //Refuse to output dictionary keys that aren't of type string
-            if (keyType != typeof(string)) {
+            if (keyType != typeof(string))
+            {
                 return _iConvertParsedResult.ConvertParsedResult(result, origTypeName);
             }
             IDictionary dict = (x as IDictionary)!;
-            foreach (object key in dict.Keys) {
+            foreach (object key in dict.Keys)
+            {
                 result[(string)key] = Parse(dict[key], numberAsDecimal);
             }
             return _iConvertParsedResult.ConvertParsedResult(result, origTypeName);
-        } else if (x is IEnumerable enumerable) {
+        }
+        else if (x is IEnumerable enumerable)
+        {
             var result = new List<object?>();
             IEnumerator e = enumerable.GetEnumerator();
-            while (e.MoveNext()) {
+            while (e.MoveNext())
+            {
                 object? o = e.Current;
                 result.Add(Parse(o, numberAsDecimal));
             }
             ((IDisposable)e).Dispose();
             return _iConvertParsedResult.ConvertParsedResult(result, origTypeName);
+        }
+        else if ((x is Newtonsoft.Json.Linq.JArray jarray) || (x is Newtonsoft.Json.Linq.JObject jobject))
+        {
+            return ParseNewtonsoftJson(x).ExportToPlainObject();
         } else {
             var result = new Dictionary<string, object?>();
             FieldInfo[] fieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
@@ -264,6 +300,35 @@ class PlainObjectConverter : IConvertParsedResult {
         new JsonStringBuilder(this, forceAscii: _forceAscii, indentJson: indent, sortKeys: sortKeys, keyAsSymbol: keyAsSymbol, removeSurrogatePair: removeSurrogatePair).WriteToSb(sb, po, 0);
         string json = sb.ToString();
         return json;
+    }
+    private static EasyObjectClassic ParseNewtonsoftJson(dynamic? x)
+    {
+        if (x == null) return EasyObjectClassic.Null;
+        if (x is Newtonsoft.Json.Linq.JArray jarray)
+        {
+            List<object> array = jarray.ToObject<List<object>>()!;
+            var result = EasyObjectClassic.NewArray();
+            foreach (var item in array)
+            {
+                result.Add(ParseNewtonsoftJson(item));
+            }
+            return result;
+        }
+        else if (x is Newtonsoft.Json.Linq.JObject jobject)
+        {
+            Dictionary<string, object> dict = jobject.ToObject<Dictionary<string, object>>()!;
+            var result = EasyObjectClassic.NewObject();
+            var keys = dict.Keys;
+            foreach (var key in keys)
+            {
+                result.Add(key, ParseNewtonsoftJson(dict[key]));
+            }
+            return result;
+        }
+        else
+        {
+            return x;
+        }
     }
 }
 
