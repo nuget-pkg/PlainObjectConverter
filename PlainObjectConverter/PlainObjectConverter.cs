@@ -1,7 +1,4 @@
-﻿# if USE_POC_CODE
-namespace Global;
-
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -10,27 +7,33 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
-
+using Newtonsoft.Json.Linq;
+// ReSharper disable CheckNamespace
+// ReSharper disable RedundantAssignment
+// ReSharper disable RedundantJumpStatement
+# if USE_POC_CODE
+namespace Global;
 #if GLOBAL_POC
 public
 #else
 internal
 #endif
-class PlainObjectConverter : IConvertParsedResult {
-    public object? ConvertParsedResult(object? x, string origTypeName) // IConvertParsedResult
-    {
+    class PlainObjectConverter : IConvertParsedResult {
+    // IConvertParsedResult # ConvertParsedResult()
+    public object? ConvertParsedResult(object? x, string origTypeName) {
         return x;
     }
     internal readonly IParseJson? JsonParser;
     private readonly bool _forceAscii;
     private readonly IConvertParsedResult _iConvertParsedResult;
-    public PlainObjectConverter(IParseJson? jsonParser = null, bool forceAscii = false, /*bool removeSurrogatePair = false,*/ IConvertParsedResult? iConvertParsedResult = null) {
+    public PlainObjectConverter(IParseJson? jsonParser = null,
+        bool forceAscii = false, /*bool removeSurrogatePair = false,*/
+        IConvertParsedResult? iConvertParsedResult = null) {
         JsonParser = jsonParser;
         _forceAscii = forceAscii;
         if (iConvertParsedResult == null) {
             iConvertParsedResult = this;
         }
-
         _iConvertParsedResult = iConvertParsedResult;
     }
     internal object? UnWrapOrExportToPlainObject(object? x) {
@@ -39,32 +42,37 @@ class PlainObjectConverter : IConvertParsedResult {
         }
         if (x is IExposeInternalObject) {
             x = ((IExposeInternalObject)x).ExposeInternalObject();
-        } else if (x is IExportToPlainObject) {
+        }
+        else if (x is IExportToPlainObject) {
             x = ((IExportToPlainObject)x).ExportToPlainObject();
-        } else {
+        }
+        else {
             try {
                 Type type = x.GetType();
                 MethodInfo? method = type.GetMethod("ExportToPlainObject");
                 if (method != null) {
                     x = method.Invoke(x, []);
                 }
-            } catch (Exception) {
+            }
+            catch (Exception) {
                 // ignored
             }
         }
         if (JsonParser != null) {
             if (x is IExportToCommonJson) {
                 x = JsonParser.ParseJson(((IExportToCommonJson)x).ExportToCommonJson());
-            } else {
+            }
+            else {
                 try {
                     if (x != null) {
-                        Type type = x!.GetType();
+                        Type type = x.GetType();
                         MethodInfo? method = type.GetMethod("ExportToCommonJson");
                         if (method != null) {
                             x = JsonParser.ParseJson((string)method.Invoke(x, [])!);
                         }
                     }
-                } catch (Exception) {
+                }
+                catch (Exception) {
                     // ignored
                 }
             }
@@ -81,15 +89,17 @@ class PlainObjectConverter : IConvertParsedResult {
     }
     internal string GetMemberName(MemberInfo member) {
         if (member.IsDefined(typeof(DataMemberAttribute), true)) {
-            var dataMemberAttribute = (DataMemberAttribute)Attribute.GetCustomAttribute(member, typeof(DataMemberAttribute), true)!;
+            var dataMemberAttribute =
+                (DataMemberAttribute)Attribute.GetCustomAttribute(member, typeof(DataMemberAttribute), true)!;
             if (!string.IsNullOrEmpty(dataMemberAttribute.Name!)) {
                 return dataMemberAttribute.Name;
             }
         }
         return member.Name;
     }
-    public string ToPrintable(bool showDetail, object? x, string? title = null, bool compact = false, bool removeSurrogatePair = false) {
-        return ToPrintableHelper(showDetail, x, title, compact: compact, removeSurrogatePair: removeSurrogatePair, FullName(x));
+    public string ToPrintable(bool showDetail, object? x, string? title = null, bool compact = false,
+        bool removeSurrogatePair = false) {
+        return ToPrintableHelper(showDetail, x, title, compact, removeSurrogatePair, FullName(x));
     }
     public static string EscapeNonAsciiChars(string text) {
         var sb = new StringBuilder();
@@ -101,7 +111,8 @@ class PlainObjectConverter : IConvertParsedResult {
             if (c > 127) {
                 ushort val = c;
                 sb.Append("\\u").Append(val.ToString("X4"));
-            } else {
+            }
+            else {
                 sb.Append(c);
             }
         }
@@ -109,7 +120,8 @@ class PlainObjectConverter : IConvertParsedResult {
         sb.Length = 0;
         return result;
     }
-    private string ToPrintableHelper(bool showDetail, object? x, string? title, bool compact, bool removeSurrogatePair, string? fullName = null) {
+    private string ToPrintableHelper(bool showDetail, object? x, string? title, bool compact, bool removeSurrogatePair,
+        string? fullName = null) {
         if (fullName == null) {
             fullName = FullName(x);
         }
@@ -132,8 +144,9 @@ class PlainObjectConverter : IConvertParsedResult {
         }
         string output /*= null*/;
         try {
-            output = op.Stringify(x, indent: !compact, keyAsSymbol: true, removeSurrogatePair: removeSurrogatePair);
-        } catch (Exception) {
+            output = op.Stringify(x, !compact, keyAsSymbol: true, removeSurrogatePair: removeSurrogatePair);
+        }
+        catch (Exception) {
             output = x.ToString()!;
         }
         if (!showDetail) {
@@ -162,120 +175,101 @@ class PlainObjectConverter : IConvertParsedResult {
         if (x == null) {
             return _iConvertParsedResult.ConvertParsedResult(null, origTypeName);
         }
+        if (x is JArray || x is JObject) {
+            return ParseNewtonsoftJson(x).ExportToPlainObject();
+        }
         Type type = x.GetType();
-        if (type == typeof(string) || type == typeof(char))
-        {
+        if (type == typeof(string) || type == typeof(char)) {
             return _iConvertParsedResult.ConvertParsedResult(x.ToString(), origTypeName);
         }
         else if (type == typeof(byte) || type == typeof(sbyte)
-              || type == typeof(short) || type == typeof(ushort)
-              || type == typeof(int) || type == typeof(uint)
-              || type == typeof(long) || type == typeof(ulong)
-              || type == typeof(float)
-              || type == typeof(double)
-              || type == typeof(decimal))
-        {
-            if (numberAsDecimal)
-            {
+                                      || type == typeof(short) || type == typeof(ushort)
+                                      || type == typeof(int) || type == typeof(uint)
+                                      || type == typeof(long) || type == typeof(ulong)
+                                      || type == typeof(float)
+                                      || type == typeof(double)
+                                      || type == typeof(decimal)) {
+            if (numberAsDecimal) {
                 return _iConvertParsedResult.ConvertParsedResult(Convert.ToDecimal(x), origTypeName);
             }
             return _iConvertParsedResult.ConvertParsedResult(Convert.ToDouble(x), origTypeName);
         }
-        else if (type == typeof(bool))
-        {
+        else if (type == typeof(bool)) {
             return _iConvertParsedResult.ConvertParsedResult(x, origTypeName);
         }
-        else if (type == typeof(DateTime))
-        {
+        else if (type == typeof(DateTime)) {
             DateTime dt = (DateTime)x;
-            switch (dt.Kind)
-            {
+            switch (dt.Kind) {
                 case DateTimeKind.Local:
-                    return _iConvertParsedResult.ConvertParsedResult(dt.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"), origTypeName);
+                    return _iConvertParsedResult.ConvertParsedResult(dt.ToString("yyyy-MM-ddTHH\\:mm\\:ss.fffffffzzz"),
+                        origTypeName);
                 case DateTimeKind.Utc:
                     return _iConvertParsedResult.ConvertParsedResult(dt.ToString("o"), origTypeName);
                 default:
                     return _iConvertParsedResult.ConvertParsedResult(dt.ToString("o").Replace("Z", ""), origTypeName);
             }
         }
-        else if (type == typeof(TimeSpan))
-        {
+        else if (type == typeof(TimeSpan)) {
             return _iConvertParsedResult.ConvertParsedResult(x.ToString(), origTypeName);
         }
-        else if (type == typeof(Guid))
-        {
+        else if (type == typeof(Guid)) {
             return _iConvertParsedResult.ConvertParsedResult(x.ToString(), origTypeName);
         }
-        else if (type.IsEnum)
-        {
+        else if (type.IsEnum) {
             return _iConvertParsedResult.ConvertParsedResult(x.ToString(), origTypeName);
         }
-        else if (x is ExpandoObject)
-        {
+        else if (x is ExpandoObject) {
             var dic = x as IDictionary<string, object?>;
             var result = new Dictionary<string, object?>();
-            foreach (var key in dic!.Keys)
-            {
+            foreach (var key in dic!.Keys) {
                 result[key] = Parse(dic[key], numberAsDecimal);
             }
             return _iConvertParsedResult.ConvertParsedResult(result, origTypeName);
         }
-        else if (x is IList list)
-        {
+        else if (x is IList list) {
             var result = new List<object?>();
-            for (int i = 0; i < list.Count; i++)
-            {
+            for (int i = 0; i < list.Count; i++) {
                 result.Add(Parse(list[i], numberAsDecimal));
             }
             return _iConvertParsedResult.ConvertParsedResult(result, origTypeName);
         }
-        else if (x is Hashtable ht)
-        {
+        else if (x is Hashtable ht) {
             var result = new Dictionary<string, object?>();
-            foreach (object key in ht.Keys)
-            {
-                if (!(key is string s))
-                {
+            foreach (object key in ht.Keys) {
+                if (!(key is string s)) {
                     continue;
                 }
                 result.Add(s, Parse(ht[s], numberAsDecimal));
             }
             return _iConvertParsedResult.ConvertParsedResult(result, origTypeName);
         }
-        else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
-        {
+        else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>)) {
             Type keyType = type.GetGenericArguments()[0];
             var result = new Dictionary<string, object?>();
             //Refuse to output dictionary keys that aren't of type string
-            if (keyType != typeof(string))
-            {
+            if (keyType != typeof(string)) {
                 return _iConvertParsedResult.ConvertParsedResult(result, origTypeName);
             }
             IDictionary dict = (x as IDictionary)!;
-            foreach (object key in dict.Keys)
-            {
+            foreach (object key in dict.Keys) {
                 result[(string)key] = Parse(dict[key], numberAsDecimal);
             }
             return _iConvertParsedResult.ConvertParsedResult(result, origTypeName);
         }
-        else if (x is IEnumerable enumerable)
-        {
+        else if (x is IEnumerable enumerable) {
             var result = new List<object?>();
             IEnumerator e = enumerable.GetEnumerator();
-            while (e.MoveNext())
-            {
+            while (e.MoveNext()) {
                 object? o = e.Current;
                 result.Add(Parse(o, numberAsDecimal));
             }
             ((IDisposable)e).Dispose();
             return _iConvertParsedResult.ConvertParsedResult(result, origTypeName);
         }
-        else if ((x is Newtonsoft.Json.Linq.JArray jarray) || (x is Newtonsoft.Json.Linq.JObject jobject))
-        {
-            return ParseNewtonsoftJson(x).ExportToPlainObject();
-        } else {
+        else {
             var result = new Dictionary<string, object?>();
-            FieldInfo[] fieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
+            FieldInfo[] fieldInfos =
+                type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
             for (int i = 0; i < fieldInfos.Length; i++) {
                 if (fieldInfos[i].IsDefined(typeof(IgnoreDataMemberAttribute), true)) {
                     continue;
@@ -283,7 +277,8 @@ class PlainObjectConverter : IConvertParsedResult {
                 object? value = fieldInfos[i].GetValue(x);
                 result[GetMemberName(fieldInfos[i])] = Parse(value);
             }
-            PropertyInfo[] propertyInfo = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
+            PropertyInfo[] propertyInfo =
+                type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
             for (int i = 0; i < propertyInfo.Length; i++) {
                 if (!propertyInfo[i].CanRead || propertyInfo[i].IsDefined(typeof(IgnoreDataMemberAttribute), true)) {
                     continue;
@@ -294,52 +289,48 @@ class PlainObjectConverter : IConvertParsedResult {
             return _iConvertParsedResult.ConvertParsedResult(result, origTypeName);
         }
     }
-    public string Stringify(object? x, bool indent, bool sortKeys = false, bool keyAsSymbol = false, bool removeSurrogatePair = false) {
-        var po = Parse(x, numberAsDecimal: true);
+    public string Stringify(object? x, bool indent, bool sortKeys = false, bool keyAsSymbol = false,
+        bool removeSurrogatePair = false) {
+        var po = Parse(x, true);
         StringBuilder sb = new StringBuilder();
-        new JsonStringBuilder(this, forceAscii: _forceAscii, indentJson: indent, sortKeys: sortKeys, keyAsSymbol: keyAsSymbol, removeSurrogatePair: removeSurrogatePair).WriteToSb(sb, po, 0);
+        new JsonStringBuilder(this, _forceAscii, indent, sortKeys, keyAsSymbol, removeSurrogatePair).WriteToSb(sb, po,
+            0);
         string json = sb.ToString();
         return json;
     }
-    private static EasyObjectClassic ParseNewtonsoftJson(dynamic? x)
-    {
+    private static EasyObjectClassic ParseNewtonsoftJson(dynamic? x) {
         if (x == null) return EasyObjectClassic.Null;
-        if (x is Newtonsoft.Json.Linq.JArray jarray)
-        {
+        if (x is JArray jarray) {
             List<object> array = jarray.ToObject<List<object>>()!;
             var result = EasyObjectClassic.NewArray();
-            foreach (var item in array)
-            {
+            foreach (var item in array) {
                 result.Add(ParseNewtonsoftJson(item));
             }
             return result;
         }
-        else if (x is Newtonsoft.Json.Linq.JObject jobject)
-        {
+        else if (x is JObject jobject) {
             Dictionary<string, object> dict = jobject.ToObject<Dictionary<string, object>>()!;
             var result = EasyObjectClassic.NewObject();
             var keys = dict.Keys;
-            foreach (var key in keys)
-            {
+            foreach (var key in keys) {
                 result.Add(key, ParseNewtonsoftJson(dict[key]));
             }
             return result;
         }
-        else
-        {
+        else {
             return x;
         }
     }
 }
-
 internal class JsonStringBuilder {
-    private readonly PlainObjectConverter _poc;
     private readonly bool _forceAscii /*= false*/;
     private readonly bool _indentJson /*= false*/;
-    private readonly bool _sortKeys /*= false*/;
     private readonly bool _keyAsSymbol;
+    private readonly PlainObjectConverter _poc;
     private readonly bool _removeSurrogatePair;
-    public JsonStringBuilder(PlainObjectConverter poc, bool forceAscii, bool indentJson, bool sortKeys, bool keyAsSymbol, bool removeSurrogatePair = false) {
+    private readonly bool _sortKeys /*= false*/;
+    public JsonStringBuilder(PlainObjectConverter poc, bool forceAscii, bool indentJson, bool sortKeys,
+        bool keyAsSymbol, bool removeSurrogatePair = false) {
         _poc = poc;
         _forceAscii = forceAscii;
         _indentJson = indentJson;
@@ -366,7 +357,8 @@ internal class JsonStringBuilder {
         }
         return null;
     }
-    private void WriteProcessGenericIDictionaryToSb<T>(StringBuilder sb, IDictionary<string, T> dict/*, bool indent*/, int level) {
+    private void WriteProcessGenericIDictionaryToSb<T>(StringBuilder sb, IDictionary<string, T> dict /*, bool indent*/,
+        int level) {
         sb.Append("{");
         int count = 0;
         var keys = from a in dict.Keys select a;
@@ -402,16 +394,18 @@ internal class JsonStringBuilder {
             sb.Append("null");
             return;
         }
-        Type type = x!.GetType();
+        Type type = x.GetType();
         if (x is IExportToPlainObject exportableObject) {
             x = exportableObject.ExportToPlainObject();
-        } else {
+        }
+        else {
             try {
                 MethodInfo? method = type.GetMethod("ExportToPlainObject");
                 if (method != null) {
                     x = method.Invoke(x, []);
                 }
-            } catch (Exception) {
+            }
+            catch (Exception) {
                 // ignored
             }
         }
@@ -419,7 +413,7 @@ internal class JsonStringBuilder {
             sb.Append("null");
             return;
         }
-        type = x!.GetType();
+        type = x.GetType();
         if (type == typeof(string) || type == typeof(char)) {
             string str = x.ToString()!;
             if (_removeSurrogatePair) {
@@ -447,15 +441,17 @@ internal class JsonStringBuilder {
             || type == typeof(long)
             || type == typeof(ulong)
             || type == typeof(float)
-            || type == typeof(double) || type == typeof(Double)
+            || type == typeof(double) || type == typeof(double)
             || type == typeof(decimal)
-            ) {
-            sb.Append(x/*.ToString()*/);
+           ) {
+            sb.Append(x /*.ToString()*/);
             return;
-        } else if (type == typeof(bool)) {
+        }
+        else if (type == typeof(bool)) {
             sb.Append(x.ToString()!.ToLower());
             return;
-        } else if (type == typeof(DateTime)) {
+        }
+        else if (type == typeof(DateTime)) {
             DateTime dt = (DateTime)x;
             switch (dt.Kind) {
                 case DateTimeKind.Local:
@@ -469,16 +465,20 @@ internal class JsonStringBuilder {
                     break;
             }
             return;
-        } else if (type == typeof(TimeSpan)) {
+        }
+        else if (type == typeof(TimeSpan)) {
             WriteToSb(sb, x.ToString(), level, cancelIndent);
             return;
-        } else if (type == typeof(Guid)) {
+        }
+        else if (type == typeof(Guid)) {
             WriteToSb(sb, x.ToString(), level, cancelIndent);
             return;
-        } else if (type.IsEnum) {
+        }
+        else if (type.IsEnum) {
             WriteToSb(sb, x.ToString(), level, cancelIndent);
             return;
-        } else if (x is IList) {
+        }
+        else if (x is IList) {
             IList list = (x as IList)!;
             if (list.Count == 0) {
                 sb.Append("[]");
@@ -503,7 +503,8 @@ internal class JsonStringBuilder {
             Indent(sb, level);
             sb.Append(']');
             return;
-        } else if (x is Hashtable) {
+        }
+        else if (x is Hashtable) {
             Hashtable ht = (x as Hashtable)!;
             sb.Append("{");
             int count = 0;
@@ -515,7 +516,7 @@ internal class JsonStringBuilder {
             if (_sortKeys) {
                 keys = keys.OrderBy(k => k as string).ToList();
             }
-            foreach (object key in keys/*ht.Keys*/) {
+            foreach (object key in keys /*ht.Keys*/) {
                 if (count == 0 && _indentJson) {
                     sb.Append('\n');
                 }
@@ -535,7 +536,8 @@ internal class JsonStringBuilder {
                 Indent(sb, level);
             }
             sb.Append("}");
-        } else if (GetGenericIDictionaryType(type) != null) {
+        }
+        else if (GetGenericIDictionaryType(type) != null) {
             type = GetGenericIDictionaryType(type)!;
             Type keyType = type.GetGenericArguments()[0];
             //Refuse to output dictionary keys that aren't of type string
@@ -545,7 +547,8 @@ internal class JsonStringBuilder {
             }
             WriteProcessGenericIDictionaryToSb(sb, (dynamic)x, level);
             return;
-        } else if (x is IEnumerable) {
+        }
+        else if (x is IEnumerable) {
             IEnumerable enumerable = (IEnumerable)x;
             var result = new List<object>();
             IEnumerator e = enumerable.GetEnumerator();
@@ -555,10 +558,12 @@ internal class JsonStringBuilder {
             }
             ((IDisposable)e).Dispose();
             WriteToSb(sb, result, level, cancelIndent);
-        } else {
+        }
+        else {
             int count = 0;
             sb.Append('{');
-            FieldInfo[] fieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
+            FieldInfo[] fieldInfos =
+                type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
             for (int i = 0; i < fieldInfos.Length; i++) {
                 if (fieldInfos[i].IsDefined(typeof(IgnoreDataMemberAttribute), true)) {
                     continue;
@@ -578,7 +583,8 @@ internal class JsonStringBuilder {
                 WriteToSb(sb, value, level + 1, true);
                 count++;
             }
-            PropertyInfo[] propertyInfo = type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
+            PropertyInfo[] propertyInfo =
+                type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
             for (int i = 0; i < propertyInfo.Length; i++) {
                 if (!propertyInfo[i].CanRead || propertyInfo[i].IsDefined(typeof(IgnoreDataMemberAttribute), true)) {
                     continue;
@@ -639,7 +645,8 @@ internal class JsonStringBuilder {
                     if (c < ' ' || (_forceAscii && c > 127)) {
                         ushort val = c;
                         sb.Append("\\u").Append(val.ToString("X4"));
-                    } else {
+                    }
+                    else {
                         sb.Append(c);
                     }
                     break;
