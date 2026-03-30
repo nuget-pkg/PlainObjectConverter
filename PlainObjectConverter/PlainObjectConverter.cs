@@ -176,7 +176,7 @@ internal
             return _iConvertParsedResult.ConvertParsedResult(null, origTypeName);
         }
         if (x is JArray || x is JObject) {
-            return ParseNewtonsoftJson(x).ExportToPlainObject();
+            _iConvertParsedResult.ConvertParsedResult(ParseNewtonsoftJson(x).ExportToPlainObject(), origTypeName);
         }
         Type type = x.GetType();
         if (type == typeof(string) || type == typeof(char)) {
