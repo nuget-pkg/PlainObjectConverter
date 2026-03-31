@@ -11,6 +11,13 @@ using Newtonsoft.Json.Linq;
 // ReSharper disable CheckNamespace
 // ReSharper disable RedundantAssignment
 // ReSharper disable RedundantJumpStatement
+// ReSharper disable ClassNeverInstantiated.Global
+// ReSharper disable InconsistentNaming
+// ReSharper disable MergeCastWithTypeCheck
+// ReSharper disable MemberCanBePrivate.Global
+// ReSharper disable UseObjectOrCollectionInitializer
+// ReSharper disable ForCanBeConvertedToForeach
+// ReSharper disable ConvertToPrimaryConstructor
 # if USE_POC_CODE
 namespace Global;
 #if GLOBAL_POC
@@ -23,7 +30,7 @@ internal
     public object? ConvertParsedResult(object? x, string origTypeName) {
         return x;
     }
-    internal readonly IParseJson? JsonParser;
+    private readonly IParseJson? JsonParser;
     private readonly bool _forceAscii;
     private readonly IConvertParsedResult _iConvertParsedResult;
     public PlainObjectConverter(IParseJson? jsonParser = null,
@@ -31,12 +38,10 @@ internal
         IConvertParsedResult? iConvertParsedResult = null) {
         JsonParser = jsonParser;
         _forceAscii = forceAscii;
-        if (iConvertParsedResult == null) {
-            iConvertParsedResult = this;
-        }
+        iConvertParsedResult ??= this;
         _iConvertParsedResult = iConvertParsedResult;
     }
-    internal object? UnWrapOrExportToPlainObject(object? x) {
+    private object? UnWrapOrExportToPlainObject(object? x) {
         if (x == null) {
             return null;
         }
@@ -122,9 +127,7 @@ internal
     }
     private string ToPrintableHelper(bool showDetail, object? x, string? title, bool compact, bool removeSurrogatePair,
         string? fullName = null) {
-        if (fullName == null) {
-            fullName = FullName(x);
-        }
+        fullName ??= FullName(x);
         PlainObjectConverter op = this;
         string s = "";
         if (title != null) {
