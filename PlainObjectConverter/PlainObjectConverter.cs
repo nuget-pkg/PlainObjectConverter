@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
+using Core;
 using Newtonsoft.Json.Linq;
 // ReSharper disable CheckNamespace
 // ReSharper disable RedundantAssignment
@@ -301,11 +302,11 @@ internal
         string json = sb.ToString();
         return json;
     }
-    private static EasyObjectClassic ParseNewtonsoftJson(dynamic? x) {
-        if (x == null) return EasyObjectClassic.Null;
+    private static CoreObject ParseNewtonsoftJson(dynamic? x) {
+        if (x == null) return CoreObject.Null;
         if (x is JArray jarray) {
             List<object> array = jarray.ToObject<List<object>>()!;
-            var result = EasyObjectClassic.NewArray();
+            var result = CoreObject.NewArray();
             foreach (var item in array) {
                 result.Add(ParseNewtonsoftJson(item));
             }
@@ -313,7 +314,7 @@ internal
         }
         else if (x is JObject jobject) {
             Dictionary<string, object> dict = jobject.ToObject<Dictionary<string, object>>()!;
-            var result = EasyObjectClassic.NewObject();
+            var result = CoreObject.NewObject();
             var keys = dict.Keys;
             foreach (var key in keys) {
                 result.Add(key, ParseNewtonsoftJson(dict[key]));
