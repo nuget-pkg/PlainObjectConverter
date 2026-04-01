@@ -451,8 +451,8 @@ internal class JsonStringBuilder {
             string str = x.ToString()!;
             if (_removeSurrogatePair) {
                 str = Regex.Replace(str, @"[\uD800-\uDFFF]", "{ddbea68e-d93f-4e85-92b5-83b1ace6d50f}");
-                str = str.Replace("{ddbea68e-d93f-4e85-92b5-83b1ace6d50f}{ddbea68e-d93f-4e85-92b5-83b1ace6d50f}", "★");
-                str = str.Replace("{ddbea68e-d93f-4e85-92b5-83b1ace6d50f}", "★");
+                str = str.Replace("{ddbea68e-d93f-4e85-92b5-83b1ace6d50f}{ddbea68e-d93f-4e85-92b5-83b1ace6d50f}", "✅");
+                str = str.Replace("{ddbea68e-d93f-4e85-92b5-83b1ace6d50f}", "✅");
             }
             if (noQuoteKey) {
                 if (PlainObjectConverter.IsValidSymbolName(str)) {
