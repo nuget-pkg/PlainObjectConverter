@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Core;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -7,8 +8,6 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Text.RegularExpressions;
-using Core;
-using Newtonsoft.Json.Linq;
 // ReSharper disable CheckNamespace
 // ReSharper disable RedundantAssignment
 // ReSharper disable RedundantJumpStatement
@@ -60,7 +59,7 @@ internal
                     x = method.Invoke(x, []);
                 }
             }
-            catch (Exception) {
+            catch {
                 // ignored
             }
         }
@@ -78,7 +77,7 @@ internal
                         }
                     }
                 }
-                catch (Exception) {
+                catch {
                     // ignored
                 }
             }
@@ -146,7 +145,7 @@ internal
             }
             return s + "`" + str + "`";
         }
-        string output /*= null*/;
+        string output;
         try {
             output = op.Stringify(x, !compact, keyAsSymbol: true, removeSurrogatePair: removeSurrogatePair);
         }
@@ -179,8 +178,23 @@ internal
         if (x == null) {
             return _iConvertParsedResult.ConvertParsedResult(null, origTypeName);
         }
-        if (x is JArray || x is JObject) {
-            _iConvertParsedResult.ConvertParsedResult(ParseNewtonsoftJson(x).ExportToPlainObject(), origTypeName);
+        if (x is System.Xml.XmlNode xnode) {
+            x = _iConvertParsedResult.ConvertParsedResult(ParseXmlNode(xnode).ExportToPlainObject(), origTypeName);
+        }
+        if (x is System.Xml.XmlDocument xdoc) {
+            x = _iConvertParsedResult.ConvertParsedResult(ParseXmlDocument(xdoc).ExportToPlainObject(), origTypeName);
+        }
+        if (x is System.Xml.Linq.XElement xelm) {
+            x = _iConvertParsedResult.ConvertParsedResult(ParseXElement(xelm).ExportToPlainObject(), origTypeName);
+        }
+        if (x is Newtonsoft.Json.Linq.JArray || x is Newtonsoft.Json.Linq.JObject) {
+            x = _iConvertParsedResult.ConvertParsedResult(ParseNewtonsoftJson(x).ExportToPlainObject(), origTypeName);
+        }
+        if (x is Newtonsoft.Json.Linq.JValue jValue) {
+            x = jValue.Value;
+        }
+        if (x == null) {
+            return _iConvertParsedResult.ConvertParsedResult(null, origTypeName);
         }
         Type type = x.GetType();
         if (type == typeof(string) || type == typeof(char)) {
@@ -304,7 +318,7 @@ internal
     }
     private static CoreObject ParseNewtonsoftJson(dynamic? x) {
         if (x == null) return CoreObject.Null;
-        if (x is JArray jarray) {
+        if (x is Newtonsoft.Json.Linq.JArray jarray) {
             List<object> array = jarray.ToObject<List<object>>()!;
             var result = CoreObject.NewArray();
             foreach (var item in array) {
@@ -312,7 +326,7 @@ internal
             }
             return result;
         }
-        else if (x is JObject jobject) {
+        else if (x is Newtonsoft.Json.Linq.JObject jobject) {
             Dictionary<string, object> dict = jobject.ToObject<Dictionary<string, object>>()!;
             var result = CoreObject.NewObject();
             var keys = dict.Keys;
@@ -325,14 +339,29 @@ internal
             return x;
         }
     }
+    public static CoreObject ParseXmlNode(System.Xml.XmlNode? xmlNode) {
+        if (xmlNode == null) return CoreObject.Null;
+        string json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(xmlNode, Newtonsoft.Json.Formatting.Indented);
+        return CoreObject.FromJson(json);
+    }
+    public static CoreObject ParseXmlDocument(System.Xml.XmlDocument xdoc) {
+        System.Xml.XmlNode? xmlNode = xdoc.DocumentElement;
+        if (xmlNode == null) return CoreObject.Null;
+        return ParseXmlNode(xdoc.DocumentElement);
+    }
+    public static CoreObject ParseXElement(System.Xml.Linq.XElement xelem) {
+        System.Xml.XmlDocument doc = new System.Xml.XmlDocument();
+        System.Xml.XmlNode? xmlNode = doc.ReadNode(xelem.CreateReader());
+        return ParseXmlNode(xmlNode);
+    }
 }
 internal class JsonStringBuilder {
     private readonly bool _forceAscii /*= false*/;
     private readonly bool _indentJson /*= false*/;
-    private readonly bool _keyAsSymbol;
-    private readonly PlainObjectConverter _poc;
-    private readonly bool _removeSurrogatePair;
     private readonly bool _sortKeys /*= false*/;
+    private readonly bool _keyAsSymbol /*= false*/;
+    private readonly bool _removeSurrogatePair;
+    private readonly PlainObjectConverter _poc;
     public JsonStringBuilder(PlainObjectConverter poc, bool forceAscii, bool indentJson, bool sortKeys,
         bool keyAsSymbol, bool removeSurrogatePair = false) {
         _poc = poc;
