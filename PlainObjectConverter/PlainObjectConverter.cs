@@ -1,4 +1,4 @@
-﻿using Core;
+﻿//using Core;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -178,6 +178,7 @@ internal
         if (x == null) {
             return _iConvertParsedResult.ConvertParsedResult(null, origTypeName);
         }
+#if false
         if (x is System.Xml.XmlNode xnode) {
             x = _iConvertParsedResult.ConvertParsedResult(ParseXmlNode(xnode).ExportToPlainObject(), origTypeName);
         }
@@ -193,6 +194,7 @@ internal
         if (x is Newtonsoft.Json.Linq.JValue jValue) {
             x = jValue.Value;
         }
+#endif
         if (x == null) {
             return _iConvertParsedResult.ConvertParsedResult(null, origTypeName);
         }
@@ -316,6 +318,7 @@ internal
         string json = sb.ToString();
         return json;
     }
+#if false
     private static CoreObject ParseNewtonsoftJson(dynamic? x) {
         if (x == null) return CoreObject.Null;
         if (x is Newtonsoft.Json.Linq.JArray jarray) {
@@ -354,6 +357,7 @@ internal
         System.Xml.XmlNode? xmlNode = doc.ReadNode(xelem.CreateReader());
         return ParseXmlNode(xmlNode);
     }
+#endif
 }
 internal class JsonStringBuilder {
     private readonly bool _forceAscii /*= false*/;

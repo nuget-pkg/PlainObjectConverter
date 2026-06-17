@@ -2,7 +2,7 @@
     <PropertyGroup>
         <LangVersion>latest</LangVersion>
         <TargetFrameworks>netstandard2.0;net462;net8.0</TargetFrameworks>
-        <Version>2026.0402.0700.00</Version>
+        <Version>2026.0617.1521.39</Version>
         <Nullable>enable</Nullable>
         <ImplicitUsings>disable</ImplicitUsings>
         <RootNamespace>PlainObjectConverter</RootNamespace>
@@ -59,8 +59,11 @@
         <PackageReference Include="System.Dynamic.Runtime" Version="4.3.0" />
     </ItemGroup>
     <ItemGroup>
+		<!--
         <PackageReference Include="CoreObject" Version="2026.401.2240.41" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+		-->
+        <PackageReference Include="CommonJsonInterface" Version="2026.401.46.46" />
         <PackageReference Include="PlainObjectInterface" Version="2026.122.1836.32" />
     </ItemGroup>
 </Project>
